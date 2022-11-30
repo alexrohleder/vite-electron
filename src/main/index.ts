@@ -1,5 +1,8 @@
 import { app, BrowserWindow } from "electron";
-import "./server";
+import { startHttpServer, startWsServer } from "./server";
+
+startHttpServer();
+startWsServer();
 
 app.whenReady().then(() => {
   const win = new BrowserWindow({ width: 800, height: 600 });

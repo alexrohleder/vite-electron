@@ -1,18 +1,39 @@
 import fastify from "fastify";
 import { WebSocketServer } from "ws";
 
-const app = fastify();
+function handleInput(
+  input: { key: string; value: any },
+  output: (key: string, value: any) => void
+) {
+  output("something", "else");
+}
 
-app.get("*", async (_req, res) => {
-  res.header("Access-Control-Allow-Origin", "*");
-  res.send("Hello World");
-});
+export function startHttpServer() {
+  const http = fastify();
 
-app.listen({ port: 420_0 });
+  http.get("*", (req, res) => {
+    res.header("Access-Control-Allow-Origin", "*");
 
-const wss = new WebSocketServer({ port: 69_69 });
+    const input = { key: req.routerPath, value: req.query };
 
-wss.on("connection", (ws) => {
-  let i = 0;
-  setInterval(() => ws.send(String(i++)), 1000);
-});
+    handleInput(input, (key, value) => {
+      res.send({ key, value });
+    });
+  });
+
+  http.listen({ port: 420_0 });
+}
+
+export function startWsServer() {
+  const ws = new WebSocketServer({ port: 69_69 });
+
+  ws.on("connection", (socket) => {
+    socket.on("message", (data) => {
+      const input = JSON.parse(data.toString());
+
+      handleInput(input, (key, value) => {
+        socket.send(JSON.stringify({ key, value }));
+      });
+    });
+  });
+}
