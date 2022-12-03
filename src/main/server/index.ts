@@ -1,39 +1,40 @@
 import fastify from "fastify";
 import { WebSocketServer } from "ws";
+import { HTTP_SERVER_PORT, WS_SERVER_PORT } from "./lib/constants";
+import { eventBus, events } from "./lib/events";
 
-function handleInput(
-  input: { key: string; value: any },
-  output: (key: string, value: any) => void
-) {
-  output("something", "else");
-}
-
+/**
+ * The HTTP Server receives synchronous requests from the client, processes them
+ * using one service, and returns a response. The service may call other services
+ * and/or the event bus to perform asynchronous tasks.
+ */
 export function startHttpServer() {
   const http = fastify();
 
-  http.get("*", (req, res) => {
+  http.get("*", (_req, res) => {
     res.header("Access-Control-Allow-Origin", "*");
-
-    const input = { key: req.routerPath, value: req.query };
-
-    handleInput(input, (key, value) => {
-      res.send({ key, value });
-    });
+    res.send("ok");
   });
 
-  http.listen({ port: 420_0 });
+  http.listen({ port: HTTP_SERVER_PORT });
 }
 
+/**
+ * The WebSocket Server receives asynchronous requests from the event bus, and
+ * sends them to the client. The client may send requests back to the server
+ * using the HTTP Server.
+ */
 export function startWsServer() {
-  const ws = new WebSocketServer({ port: 69_69 });
+  const ws = new WebSocketServer({ port: WS_SERVER_PORT });
 
-  ws.on("connection", (socket) => {
-    socket.on("message", (data) => {
-      const input = JSON.parse(data.toString());
-
-      handleInput(input, (key, value) => {
-        socket.send(JSON.stringify({ key, value }));
+  // subscribe to all events of the event bus and fan out to all socket clients
+  events.forEach((event) => {
+    eventBus.on(event, (data) => {
+      ws.clients.forEach((client) => {
+        client.send(JSON.stringify({ event, data }));
       });
     });
   });
 }
+
+// todo: TCP server on same schematics of the WS server
