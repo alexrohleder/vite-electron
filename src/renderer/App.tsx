@@ -1,47 +1,22 @@
-import { useEffect, useState } from "react";
-import reactLogo from "./assets/react.svg";
-import "./App.css";
+import useLiveData from "./hooks/useLiveData";
+import http from "./lib/http";
 
 function App() {
-  const [count, setCount] = useState(0);
-  const [message, setMessage] = useState("");
+  const timer = useLiveData("timer");
+  const timerState = useLiveData("timerState");
 
-  useEffect(() => {
-    fetch("http://localhost:4200")
-      .then((res) => res.text())
-      .then(setMessage);
-
-    const ws = new WebSocket("ws://localhost:6969");
-
-    ws.onmessage = (event) => {
-      setCount(Number(event.data));
-    };
-  }, []);
+  async function onChangeState() {
+    // set loading state
+    const _success = await http(timerState === "paused" ? "resume" : "pause");
+    // set state based on success
+  }
 
   return (
-    <div className="App">
-      {window.location.href}
-      <div>
-        <a href="https://vitejs.dev" target="_blank">
-          <img src="/vite.svg" className="logo" alt="Vite logo" />
-        </a>
-        <a href="https://reactjs.org" target="_blank">
-          <img src={reactLogo} className="logo react" alt="React logo" />
-        </a>
-      </div>
-      <h1>Vite + React</h1>
-      <div className="card">
-        <button onClick={() => setCount((count) => count + 1)}>
-          count is {count}
-        </button>
-        <p>
-          Edit <code>src/App.tsx</code> and save to test HMR
-        </p>
-      </div>
-      <p className="read-the-docs">
-        Click on the Vite and React logos to learn more
-      </p>
-      message: {message}
+    <div>
+      <p>The timer: {timer}s</p>
+      <button onClick={onChangeState}>
+        {timerState === "paused" ? "Resume" : "Pause"}
+      </button>
     </div>
   );
 }
